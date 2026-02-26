@@ -1,0 +1,19 @@
+# 1. 
+protein_features_by_ppi200/
+ppi_pdb_by_uniprot/
+
+# 2. 
+cached_ppi_data/
+
+# 3. 
+saved_models/
+checkpoints/
+*.pth
+*.pt
+
+# 4.
+final_results/
+
+# 5. 
+__pycache__/
+*.pyc

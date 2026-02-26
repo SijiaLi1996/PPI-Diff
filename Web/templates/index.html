@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPI-Diff Web Server</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* 全局基础设置 */
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: #f0f4f8; /* 极浅的蓝灰背景 */
+            color: #334155;
+            margin: 0; 
+            padding: 20px 0; 
+        }
+
+        /* 主容器：大圆角，柔和阴影 */
+        .container { 
+            max-width: 960px; 
+            margin: 20px auto; 
+            background-color: #ffffff; 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06); 
+        }
+
+        /* 顶部 Banner 设计 */
+        .banner { 
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(30, 41, 59, 0.2);
+        }
+        .banner h1 { 
+            margin: 0; 
+            font-size: 24px; 
+            font-weight: 700; 
+            line-height: 1.4; 
+            letter-spacing: 0.5px;
+        }
+        .banner .contact-btn {
+            color: #38bdf8;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .banner .contact-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        /* 导航栏微调 */
+        .navbar-custom {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 20px;
+            margin-bottom: 25px;
+        }
+        .navbar-custom a { color: #475569; font-weight: 500; }
+        .navbar-custom a:hover { color: #0ea5e9; }
+
+        /* 上传区域定制 */
+        .el-upload-dragger {
+            width: 100% !important;
+            background-color: #f8fafc !important;
+            border: 2px dashed #cbd5e1 !important;
+            border-radius: 12px !important;
+            transition: all 0.3s ease;
+        }
+        .el-upload-dragger:hover {
+            border-color: #0ea5e9 !important;
+            background-color: #f0f9ff !important;
+        }
+
+        /* 核心生成按钮 */
+        .generate-btn {
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 12px 40px;
+            border-radius: 30px; /* 药丸形状 */
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 250px;
+        }
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            color: white;
+        }
+        .generate-btn:disabled {
+            background: #cbd5e1;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 结果展示区 */
+        .result-box {
+            margin-top: 35px; 
+            padding: 30px; 
+            background: linear-gradient(to right, #f0fdf4, #ecfdf5); 
+            border: 1px solid #a7f3d0;
+            border-left: 5px solid #10b981;
+            border-radius: 10px;
+        }
+        .result-box h4 { color: #065f46; font-weight: 700; margin-bottom: 15px; }
+        .download-btn-group a {
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 10px 20px;
+            margin-right: 15px;
+            transition: all 0.2s;
+        }
+
+        /* 示例按钮区 */
+        .example-section {
+            background-color: #f8fafc;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .example-btn {
+            border-radius: 20px !important;
+            font-weight: 500 !important;
+            letter-spacing: 0.3px;
+        }
+
+        /* 底部说明区 */
+        .about-section { margin-top: 40px; padding-top: 30px; border-top: 1px solid #e2e8f0; }
+        .about-section h3 { color: #1e293b; font-weight: 700; font-size: 20px; margin-bottom: 15px; }
+        .indent-text { padding-left: 20px; color: #475569; line-height: 1.7; margin-bottom: 10px; }
+        .footer { margin-top: 40px; text-align: center; }
+        .img { max-width: 100%; height: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="container" v-loading="isLoading" element-loading-text="Generating De Novo Binder... This may take a moment." element-loading-background="rgba(255, 255, 255, 0.8)">
+        
+        <div class="banner">
+            <div>
+                <h1>PPI-Diff Web Server</h1>
+                <div style="font-size: 14px; margin-top: 8px; opacity: 0.9;">
+                    Resolution-Aware Fusion of Aligned PDB Fragments for PPI Structure and Sequence Co-Design
+                </div>
+            </div>
+            <a href="javascript:void(0)" class="contact-btn" @click="openContact">Contact Us</a>
+        </div>
+        
+        <form @submit.prevent="submitForm">
+            <div class="content">
+                <div class="navbar-custom d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="#" style="margin-right: 20px; text-decoration: none;">🏠 Home</a>
+                        <a href="#" target="_blank" style="text-decoration: none;">🔗 GitHub Repository</a>
+                    </div>
+                    <span style="font-size: 13px; color: #64748b;">Version 1.0</span>
+                </div>
+                
+                <div class="alert alert-primary" style="background-color: #e0f2fe; border-color: #bae6fd; color: #0369a1; border-radius: 8px;">
+                    <strong>Instructions:</strong> Please upload a <code>.npz</code> file containing the required target protein features (fused_features, coords, sequence, absolute_positions, resolution).
+                </div>
+
+                <div class="form-group" style="margin-top: 25px;">
+                    <el-upload class="upload-demo" drag action="" :on-change="handleFileUpload" :limit="1"
+                        :file-list="fileList" :auto-upload="false" accept=".npz">
+                        <i class="el-icon-upload" style="color: #0ea5e9;"></i>
+                        <div class="el-upload__text">Drop the <strong>.npz</strong> file here or <em>click to upload</em></div>
+                    </el-upload>
+                </div>
+
+                <div class="form-group text-center" style="margin-top: 30px;">
+                    <button type="button" class="btn generate-btn" :disabled="fileList.length === 0" @click="submitForm">
+                        <i class="el-icon-magic-stick" style="margin-right: 5px;"></i> Generate Binder
+                    </button>
+                </div>
+
+                <transition name="el-fade-in-linear">
+                    <div v-if="pdbDownload && fastaDownload" class="result-box">
+                        <h4><i class="el-icon-circle-check" style="margin-right: 8px;"></i>Generation Successful!</h4>
+                        <p style="color: #047857; margin-bottom: 20px;">Your <i>de novo</i> peptide binder has been successfully generated. You can download the 3D structure and sequence below:</p>
+                        <div class="download-btn-group d-flex flex-wrap">
+                            <a :href="'/download/' + pdbDownload" class="btn btn-success shadow-sm" download>
+                                <i class="el-icon-download"></i> Download PDB Structure
+                            </a>
+                            <a :href="'/download/' + fastaDownload" class="btn btn-info shadow-sm" style="color: white; background-color: #0284c7; border-color: #0284c7;" download>
+                                <i class="el-icon-document"></i> Download FASTA Sequence
+                            </a>
+                        </div>
+                    </div>
+                </transition>
+
+                <div class="example-section">
+                    <h6 style="color: #475569; font-weight: 600; margin-bottom: 15px;">Pre-loaded Examples (Click to test):</h6>
+                    <div class="d-flex flex-wrap" style="gap: 12px;">
+                        <el-button class="example-btn" size="small" plain @click="loadExample('P38936_6P8H.npz')">🎯 Target: 6P8H</el-button>
+                        <el-button class="example-btn" size="small" plain @click="loadExample('Q7Z6K4_6PY8.npz')">🎯 Target: 6PY8</el-button>
+                        <el-button class="example-btn" size="small" plain @click="loadExample('Q16655_7TR4.npz')">🎯 Target: 7TR4</el-button>
+                        <el-button class="example-btn" size="small" plain @click="loadExample('O15525_7X5G.npz')">🎯 Target: 7X5G</el-button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div class="about-section">
+            <h3>About PPI-Diff</h3>
+            <p style="color: #475569; line-height: 1.6;">PPI-Diff provides an online server for the co-design of protein-protein interaction (PPI) structures and sequences. Users can upload target protein features in .npz format to generate de novo peptide binders.</p>
+            <div style="margin-top: 20px;">
+                <div class="indent-text"><strong>🧬 Feature Fusion:</strong> The server automatically extracts ESM-2 embeddings and performs resolution-aware feature fusion.</div>
+                <div class="indent-text"><strong>⚙️ Diffusion & Prediction:</strong> A conditional angle diffusion model generates the backbone structure, followed by an autoregressive sequence predictor.</div>
+                <div class="indent-text"><strong>📊 Output:</strong> The system returns a .pdb file (3D coordinates) and a .fasta file (amino acid sequence) for the generated binder.</div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <img src="{{ url_for('static', filename='picture.jpg') }}" alt="PPI-Diff Architecture" class="img">
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                isLoading: false,
+                fileList: [],
+                pdbDownload: '',
+                fastaDownload: ''
+            },
+            methods: {
+                openContact() {
+                    this.$msgbox({
+                        title: 'Contact Information',
+                        message: 'Corresponding Author: Sijia Li<br>Email: Please replace with actual email',
+                        dangerouslyUseHTMLString: true,
+                        confirmButtonText: 'Close'
+                    });
+                },
+                handleFileUpload(file, fileList) {
+                    this.fileList = fileList;
+                    this.pdbDownload = '';
+                    this.fastaDownload = '';
+                },
+                loadExample(filename) {
+                    this.isLoading = true;
+                    fetch('/static/examples/' + filename)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const file = new File([blob], filename, { type: "application/octet-stream" });
+                            this.fileList = [{ name: filename, raw: file }];
+                            this.submitForm();
+                        })
+                        .catch(err => {
+                            this.isLoading = false;
+                            this.$message.error('Failed to load example file.');
+                        });
+                },
+                submitForm() {
+                    if (this.fileList.length === 0) {
+                        this.$message.warning('Please upload a .npz file first.');
+                        return;
+                    }
+                    this.isLoading = true;
+                    const formData = new FormData();
+                    formData.append('file', this.fileList[0].raw);
+
+                    fetch('/predict', {
+                        method: 'POST',
+                        body: formData,
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.pdb_download && data.fasta_download) {
+                            this.pdbDownload = data.pdb_download;
+                            this.fastaDownload = data.fasta_download;
+                            this.$message({
+                                message: 'Generation Complete!',
+                                type: 'success',
+                                duration: 3000
+                            });
+                        } else {
+                            this.$message.error(data.resultMessage || "Generation failed.");
+                        }
+                        this.isLoading = false;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        this.$message.error('Server error occurred during generation.');
+                        this.isLoading = false;
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
