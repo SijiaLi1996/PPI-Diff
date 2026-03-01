@@ -3,6 +3,7 @@ import torch
 import random
 import numpy as np
 from flask import Flask, request, render_template, send_from_directory, jsonify
+import argparse
 from werkzeug.utils import secure_filename
 
 # 导入您的 PPI_Diff 模块
@@ -67,13 +68,17 @@ def predict_structure_and_sequence(file_path, output_prefix):
     ctx_res = ctx_res.unsqueeze(0)
     
     seq_len = ctx_feat.shape[1]
-    
+
     # 2. 加载模型
     ckpt = torch.load(CHECKPOINT_PATH, map_location=DEVICE)
     args = ckpt.get('args', None)
     if args is None:
         raise ValueError("Checkpoint does not contain 'args'. Cannot initialize model.")
-    
+
+    # 🌟 核心修复：如果 args 是字典，将其转换为可以通过点号访问的对象
+    if isinstance(args, dict):
+        args = argparse.Namespace(**args)
+
     # 根据保存的参数初始化
     angle_model = ConditionalAngleDiffusion(
         angle_dim=args.angle_dim, context_dim=args.context_dim, hidden_dim=args.hidden_dim,
